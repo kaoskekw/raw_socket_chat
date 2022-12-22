@@ -1,21 +1,39 @@
 import socket
+import threading
+import sys
 
-host = '127.0.0.1'
-port = 9090
-
-
-def client():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
-        client.connect((host, port))
-        while True:
-            message = ''
-            while message.strip() == '':
-                message = input('Me:')
-            if message == 'exit':
-                break
-            client.send(message.encode('utf-8'))
-            data = client.recv(1024).decode('utf-8')
+HOST = '127.0.0.1'
+PORT = 9090
 
 
-if __name__ == '__main__':
-    client()
+def listen(server):
+    while True:
+        msg = server.recv(1024).decode()
+        print(msg)
+
+
+def main():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.connect((HOST, PORT))
+
+    username = input("Enter your nickname: ")
+    server.send(username.encode('utf-8'))
+    print(server.recv(1024).decode())
+
+    thread = threading.Thread(target=listen, args=(server,))
+    thread.daemon = True
+    thread.start()
+
+    while True:
+        msg = input()
+
+        if msg == "/disconnect":
+            break
+
+        server.send(('> ' + username + ': ' + msg).encode('utf-8'))
+
+    server.close()
+
+
+if __name__ == "__main__":
+    main()
